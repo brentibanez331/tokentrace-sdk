@@ -2,6 +2,7 @@
   "name": "tokentrace-sdk",
   "version": "0.1.1",
   "description": "Drop-in LLM observability for OpenAI, Anthropic, and Gemini",
+  "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
