@@ -8,7 +8,7 @@ import type { InitOptions, State } from './types.js'
 const state: State = {
   opts: {
     apiKey: '',
-    endpoint: 'https://ingest.tokentrace.dev',
+    endpoint: 'https://ingest.tokentrace.app',
     batchSize: 20,
     flushInterval: 2000,
     flushMode: 'batch',
@@ -27,7 +27,7 @@ export function init(opts: InitOptions): void {
 
   state.opts = {
     apiKey: opts.apiKey,
-    endpoint: opts.endpoint ?? 'https://ingest.tokentrace.dev',
+    endpoint: opts.endpoint ?? 'https://ingest.tokentrace.app',
     batchSize: opts.batchSize ?? 20,
     flushInterval: opts.flushInterval ?? 2000,
     disabled: opts.disabled ?? (process.env.NODE_ENV === 'test'),
