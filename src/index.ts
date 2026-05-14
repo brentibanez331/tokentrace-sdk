@@ -1,7 +1,7 @@
 import { initQueue, flush as flushQueue } from './queue.js'
-import { patchOpenAI } from './providers/openai.js'
-import { patchAnthropic } from './providers/anthropic.js'
-import { patchGemini } from './providers/gemini.js'
+import { patchOpenAI, wrapOpenAIInstance } from './providers/openai.js'
+import { patchAnthropic, wrapAnthropicInstance } from './providers/anthropic.js'
+import { patchGemini, wrapGeminiModelInstance } from './providers/gemini.js'
 import { isServerless } from './serverless.js'
 import type { InitOptions, State } from './types.js'
 
@@ -85,6 +85,21 @@ export function tag(meta: Record<string, string>): void {
 // Required at the end of serverless handlers if flushMode is overridden to 'batch'.
 export async function flush(): Promise<void> {
   return flushQueue(state)
+}
+
+// Explicit instance wrappers — use these instead of relying on prototype patching.
+// Required in ESM environments (Node ESM, Bun, Vite) where init()'s prototype patch
+// targets a different module instance than the user's import.
+export function wrapOpenAI<T extends object>(client: T): T {
+  return wrapOpenAIInstance(client, state)
+}
+
+export function wrapAnthropic<T extends object>(client: T): T {
+  return wrapAnthropicInstance(client, state)
+}
+
+export function wrapGeminiModel<T extends object>(model: T): T {
+  return wrapGeminiModelInstance(model, state)
 }
 
 export type { InitOptions, TraceEvent, CallMeta } from './types.js'

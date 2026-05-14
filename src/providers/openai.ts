@@ -2,6 +2,26 @@ import { hashPrompt } from '../hash.js'
 import { push } from '../queue.js'
 import type { State, TraceEvent } from '../types.js'
 
+export function wrapOpenAIInstance<T extends object>(client: T, state: State): T {
+  const completions = (client as { chat?: { completions?: Record<string, unknown> } }).chat?.completions
+  if (!completions) return client
+  if (completions['__tt_instance']) return client
+  completions['__tt_instance'] = true
+
+  const orig = completions['create'] as (this: unknown, body: unknown, opts?: unknown) => unknown
+  completions['create'] = function wrappedCreate(this: unknown, body: Record<string, unknown>, options?: unknown) {
+    if (body?.stream) {
+      return Promise.resolve(streamInterceptor(this, orig, state, body, options))
+    }
+    const start = Date.now()
+    return (orig.call(this, body, options) as Promise<Record<string, unknown>>).then((res) => {
+      push(state, buildEvent('openai', start, body, res, state.pendingMeta))
+      return res
+    })
+  }
+  return client
+}
+
 export function patchOpenAI(state: State, injectedMod?: unknown): void {
   let mod: { OpenAI?: new (...a: unknown[]) => unknown; default?: new (...a: unknown[]) => unknown }
   try {

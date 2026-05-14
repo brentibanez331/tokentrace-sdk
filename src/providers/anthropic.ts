@@ -2,6 +2,26 @@ import { hashPrompt } from '../hash.js'
 import { push } from '../queue.js'
 import type { State, TraceEvent } from '../types.js'
 
+export function wrapAnthropicInstance<T extends object>(client: T, state: State): T {
+  const messages = (client as { messages?: Record<string, unknown> }).messages
+  if (!messages) return client
+  if (messages['__tt_instance']) return client
+  messages['__tt_instance'] = true
+
+  const orig = messages['create'] as (this: unknown, body: unknown, opts?: unknown) => unknown
+  messages['create'] = function wrappedCreate(this: unknown, body: Record<string, unknown>, options?: unknown) {
+    if (body?.stream) {
+      return Promise.resolve(streamInterceptor(this, orig, state, body, options))
+    }
+    const start = Date.now()
+    return (orig.call(this, body, options) as Promise<Record<string, unknown>>).then((res) => {
+      push(state, buildEvent(start, body, res, state.pendingMeta))
+      return res
+    })
+  }
+  return client
+}
+
 export function patchAnthropic(state: State, injectedMod?: unknown): void {
   let mod: { Anthropic?: new (...a: unknown[]) => unknown; default?: new (...a: unknown[]) => unknown }
   try {

@@ -9,6 +9,34 @@ import type { State, TraceEvent } from '../types.js'
 //
 // We patch GenerativeModel.prototype since getGenerativeModel returns instances of it.
 
+export function wrapGeminiModelInstance<T extends object>(model: T, state: State): T {
+  const target = model as Record<string, unknown>
+  if (target['__tt_instance']) return model
+  target['__tt_instance'] = true
+
+  const origGenerate = target['generateContent'] as (this: { model?: string }, req: unknown) => Promise<unknown>
+  const origStream = target['generateContentStream'] as (this: { model?: string }, req: unknown) => Promise<unknown>
+
+  if (origGenerate) {
+    target['generateContent'] = async function patchedGenerate(this: { model?: string }, req: unknown) {
+      const start = Date.now()
+      const result = await origGenerate.call(this, req)
+      push(state, buildEvent(start, this.model ?? '', req, result, false, state.pendingMeta))
+      return result
+    }
+  }
+
+  if (origStream) {
+    target['generateContentStream'] = async function patchedStream(this: { model?: string }, req: unknown) {
+      const start = Date.now()
+      const result = await origStream.call(this, req)
+      return wrapGeminiStream(result, start, this.model ?? '', req, state)
+    }
+  }
+
+  return model
+}
+
 export function patchGemini(state: State, injectedMod?: unknown): void {
   let mod: { GoogleGenerativeAI?: new (...a: unknown[]) => unknown; default?: new (...a: unknown[]) => unknown }
   try {
