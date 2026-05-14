@@ -25,11 +25,13 @@ export type InitOptions = {
   disabled?: boolean
   env?: string
   service?: string
+  onError?: (err: Error) => void
 }
 
-export type ResolvedOptions = Required<Omit<InitOptions, 'env' | 'service'>> & {
+export type ResolvedOptions = Required<Omit<InitOptions, 'env' | 'service' | 'onError'>> & {
   env: string
   service: string
+  onError?: (err: Error) => void
 }
 
 export type CallMeta = {

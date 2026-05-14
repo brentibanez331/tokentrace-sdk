@@ -34,6 +34,7 @@ export function init(opts: InitOptions): void {
     flushMode: opts.flushMode ?? (isServerless() ? 'immediate' : 'batch'),
     env: opts.env ?? (typeof process !== 'undefined' ? (process.env.NODE_ENV ?? 'production') : 'production'),
     service: opts.service ?? '',
+    onError: opts.onError,
   }
 
   // Seed pendingMeta with global env + service so every event carries them

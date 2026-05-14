@@ -65,13 +65,17 @@ async function send(state: State, events: TraceEvent[], attempt = 0): Promise<vo
       await delay(100 * 2 ** attempt)
       return send(state, events, attempt + 1)
     }
-  } catch {
+    if (!res.ok) {
+      state.opts.onError?.(new Error(`tokentrace ingest failed: ${res.status} ${res.statusText}`))
+    }
+  } catch (err) {
     // Network failure — retry up to 3 times
     if (attempt < 3) {
       await delay(100 * 2 ** attempt)
       return send(state, events, attempt + 1)
     }
-    // Never surface transport errors into user code
+    // All retries exhausted — report without surfacing into user code
+    state.opts.onError?.(err instanceof Error ? err : new Error(String(err)))
   }
 }
 
