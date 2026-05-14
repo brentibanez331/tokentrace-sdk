@@ -50,6 +50,25 @@ export function init(opts: InitOptions): void {
   patchGemini(state)
 
   initQueue(state)
+  void ping(state)
+}
+
+async function ping(state: State): Promise<void> {
+  if (state.opts.disabled) return
+  try {
+    const res = await fetch(`${state.opts.endpoint}/v1/ping`, {
+      method: 'GET',
+      headers: { 'x-api-key': state.opts.apiKey },
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { error?: string }
+      state.opts.onError?.(
+        new Error(`tokentrace init failed: ${body.error ?? res.statusText} (${res.status})`),
+      )
+    }
+  } catch (err) {
+    state.opts.onError?.(err instanceof Error ? err : new Error(String(err)))
+  }
 }
 
 // Merge metadata into all subsequent trace events. Call tag({}) to clear.
