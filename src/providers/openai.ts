@@ -2,11 +2,11 @@ import { hashPrompt } from '../hash.js'
 import { push } from '../queue.js'
 import type { State, TraceEvent } from '../types.js'
 
-export function patchOpenAI(state: State): void {
+export function patchOpenAI(state: State, injectedMod?: unknown): void {
   let mod: { OpenAI?: new (...a: unknown[]) => unknown; default?: new (...a: unknown[]) => unknown }
   try {
     // require works in CJS; tsup --shims makes it available in ESM builds too
-    mod = require('openai')
+    mod = (injectedMod ?? require('openai')) as typeof mod
   } catch {
     return
   }

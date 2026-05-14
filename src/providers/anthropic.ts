@@ -2,10 +2,10 @@ import { hashPrompt } from '../hash.js'
 import { push } from '../queue.js'
 import type { State, TraceEvent } from '../types.js'
 
-export function patchAnthropic(state: State): void {
+export function patchAnthropic(state: State, injectedMod?: unknown): void {
   let mod: { Anthropic?: new (...a: unknown[]) => unknown; default?: new (...a: unknown[]) => unknown }
   try {
-    mod = require('@anthropic-ai/sdk')
+    mod = (injectedMod ?? require('@anthropic-ai/sdk')) as typeof mod
   } catch {
     return
   }

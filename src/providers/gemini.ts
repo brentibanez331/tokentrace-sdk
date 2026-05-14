@@ -9,10 +9,10 @@ import type { State, TraceEvent } from '../types.js'
 //
 // We patch GenerativeModel.prototype since getGenerativeModel returns instances of it.
 
-export function patchGemini(state: State): void {
+export function patchGemini(state: State, injectedMod?: unknown): void {
   let mod: { GoogleGenerativeAI?: new (...a: unknown[]) => unknown; default?: new (...a: unknown[]) => unknown }
   try {
-    mod = require('@google/generative-ai')
+    mod = (injectedMod ?? require('@google/generative-ai')) as typeof mod
   } catch {
     return
   }
