@@ -31,6 +31,7 @@ function makeEvent(id = '1'): TraceEvent {
     input: [],
     output: 'hello',
     inputTokens: 10,
+    cachedInputTokens: 0,
     outputTokens: 5,
     latencyMs: 100,
     promptHash: 'abc12345',
