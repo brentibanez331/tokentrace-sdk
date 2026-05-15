@@ -74,13 +74,14 @@ async function* streamInterceptor(
   const stream = await (orig.call(ctx, body, options) as Promise<AsyncIterable<Record<string, unknown>>>)
 
   let output = ''
-  let model = (body.model as string) ?? ''
+  const requestedModel = (body.model as string) ?? ''
+  let resolvedModel = ''
   let inputTokens = 0
   let cachedInputTokens = 0
   let outputTokens = 0
 
   for await (const chunk of stream) {
-    model = (chunk.model as string) ?? model
+    resolvedModel = (chunk.model as string) ?? resolvedModel
     const content = (chunk as { choices?: Array<{ delta?: { content?: string } }> })
       .choices?.[0]?.delta?.content
     if (content) output += content
@@ -97,7 +98,7 @@ async function* streamInterceptor(
     id: uid(),
     ts: start,
     provider: 'openai',
-    model,
+    model: requestedModel || resolvedModel,
     input: (body.messages as unknown[]) ?? [],
     output,
     inputTokens,
@@ -122,7 +123,7 @@ function buildEvent(
     id: uid(),
     ts: start,
     provider,
-    model: (res.model as string) ?? (body.model as string) ?? '',
+    model: (body.model as string) ?? (res.model as string) ?? '',
     input: (body.messages as unknown[]) ?? [],
     output: choices?.[0]?.message?.content ?? '',
     inputTokens: usage?.prompt_tokens ?? 0,

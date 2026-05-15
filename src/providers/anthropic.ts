@@ -118,7 +118,7 @@ function buildEvent(
     id: uid(),
     ts: start,
     provider: 'anthropic',
-    model: (res.model as string) ?? (body.model as string) ?? '',
+    model: (body.model as string) ?? (res.model as string) ?? '',
     input: (body.messages as unknown[]) ?? [],
     output: text,
     inputTokens: usage?.input_tokens ?? 0,
