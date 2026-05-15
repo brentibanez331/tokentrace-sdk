@@ -8,6 +8,7 @@ export type TraceEvent = {
   input: unknown[]
   output: string
   inputTokens: number
+  cachedInputTokens: number
   outputTokens: number
   latencyMs: number
   promptHash: string

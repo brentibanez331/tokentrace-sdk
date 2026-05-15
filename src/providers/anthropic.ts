@@ -70,6 +70,7 @@ async function* streamInterceptor(
 
   let output = ''
   let inputTokens = 0
+  let cachedInputTokens = 0
   let outputTokens = 0
 
   for await (const event of stream) {
@@ -78,8 +79,9 @@ async function* streamInterceptor(
       const delta = (event as { delta?: { type?: string; text?: string } }).delta
       if (delta?.type === 'text_delta' && delta.text) output += delta.text
     } else if (type === 'message_start') {
-      const msg = (event as { message?: { usage?: { input_tokens?: number } } }).message
-      inputTokens = msg?.usage?.input_tokens ?? inputTokens
+      const usage = (event as { message?: { usage?: { input_tokens?: number; cache_read_input_tokens?: number } } }).message?.usage
+      inputTokens = usage?.input_tokens ?? inputTokens
+      cachedInputTokens = usage?.cache_read_input_tokens ?? cachedInputTokens
     } else if (type === 'message_delta') {
       const usage = (event as { usage?: { output_tokens?: number } }).usage
       outputTokens = usage?.output_tokens ?? outputTokens
@@ -95,6 +97,7 @@ async function* streamInterceptor(
     input: (body.messages as unknown[]) ?? [],
     output,
     inputTokens,
+    cachedInputTokens,
     outputTokens,
     latencyMs: Date.now() - start,
     promptHash: hashPrompt((body.messages as unknown[]) ?? []),
@@ -108,7 +111,7 @@ function buildEvent(
   res: Record<string, unknown>,
   meta: Record<string, string>,
 ): TraceEvent {
-  const usage = res.usage as { input_tokens?: number; output_tokens?: number } | undefined
+  const usage = res.usage as { input_tokens?: number; cache_read_input_tokens?: number; output_tokens?: number } | undefined
   const content = res.content as Array<{ type: string; text?: string }> | undefined
   const text = content?.find((b) => b.type === 'text')?.text ?? ''
   return {
@@ -119,6 +122,7 @@ function buildEvent(
     input: (body.messages as unknown[]) ?? [],
     output: text,
     inputTokens: usage?.input_tokens ?? 0,
+    cachedInputTokens: usage?.cache_read_input_tokens ?? 0,
     outputTokens: usage?.output_tokens ?? 0,
     latencyMs: Date.now() - start,
     promptHash: hashPrompt((body.messages as unknown[]) ?? []),

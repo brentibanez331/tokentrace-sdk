@@ -76,6 +76,7 @@ async function* streamInterceptor(
   let output = ''
   let model = (body.model as string) ?? ''
   let inputTokens = 0
+  let cachedInputTokens = 0
   let outputTokens = 0
 
   for await (const chunk of stream) {
@@ -83,9 +84,10 @@ async function* streamInterceptor(
     const content = (chunk as { choices?: Array<{ delta?: { content?: string } }> })
       .choices?.[0]?.delta?.content
     if (content) output += content
-    const usage = (chunk as { usage?: { prompt_tokens?: number; completion_tokens?: number } }).usage
+    const usage = (chunk as { usage?: { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number } } }).usage
     if (usage) {
       inputTokens = usage.prompt_tokens ?? inputTokens
+      cachedInputTokens = usage.prompt_tokens_details?.cached_tokens ?? cachedInputTokens
       outputTokens = usage.completion_tokens ?? outputTokens
     }
     yield chunk
@@ -99,6 +101,7 @@ async function* streamInterceptor(
     input: (body.messages as unknown[]) ?? [],
     output,
     inputTokens,
+    cachedInputTokens,
     outputTokens,
     latencyMs: Date.now() - start,
     promptHash: hashPrompt((body.messages as unknown[]) ?? []),
@@ -113,7 +116,7 @@ function buildEvent(
   res: Record<string, unknown>,
   meta: Record<string, string>,
 ): TraceEvent {
-  const usage = res.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+  const usage = res.usage as { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number } } | undefined
   const choices = res.choices as Array<{ message?: { content?: string } }> | undefined
   return {
     id: uid(),
@@ -123,6 +126,7 @@ function buildEvent(
     input: (body.messages as unknown[]) ?? [],
     output: choices?.[0]?.message?.content ?? '',
     inputTokens: usage?.prompt_tokens ?? 0,
+    cachedInputTokens: usage?.prompt_tokens_details?.cached_tokens ?? 0,
     outputTokens: usage?.completion_tokens ?? 0,
     latencyMs: Date.now() - start,
     promptHash: hashPrompt((body.messages as unknown[]) ?? []),
