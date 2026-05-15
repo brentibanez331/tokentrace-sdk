@@ -113,6 +113,7 @@ function wrapGeminiStream(
       input: normalizeGeminiInput(req),
       output,
       inputTokens,
+      cachedInputTokens: 0,
       outputTokens,
       latencyMs: Date.now() - start,
       promptHash: '00000000', // Gemini uses a different message format; hash not meaningful here
@@ -145,6 +146,7 @@ function buildEvent(
     input: normalizeGeminiInput(req),
     output: text,
     inputTokens: usage?.promptTokenCount ?? 0,
+    cachedInputTokens: 0,
     outputTokens: usage?.candidatesTokenCount ?? 0,
     latencyMs: Date.now() - start,
     promptHash: '00000000',
