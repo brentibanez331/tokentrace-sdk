@@ -2,6 +2,8 @@
 
 LLM observability for OpenAI, Anthropic, and Gemini. Trace every call with two lines of code.
 
+![Tokentrace dashboard](assets/hero.png)
+
 ## Install
 
 ```bash
@@ -130,3 +132,7 @@ export async function handler(req, res) {
 3. Events are queued locally and flushed in batches to `POST /v1/ingest`
 4. Failed sends retry up to 3 times with exponential backoff (100 ms → 200 ms → 400 ms)
 5. Transport errors are never thrown into your code — use `onError` to observe them
+
+![Trace list view](assets/trace-list.png)
+
+![Token usage breakdown](assets/token-breakdown.png)
